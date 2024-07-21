@@ -4,7 +4,8 @@ from medications import (
     display_inventory, 
     delete_medication, 
     manage_expiry_bin, 
-    manage_sale_bin
+    manage_sale_bin,
+    import_medications_from_csv 
     )
 from db import database_setup
 
@@ -20,7 +21,9 @@ def main():
         print("4. Check expiry bin")
         print("5. Check sales bin")
         print("6. View inventory")
-        print("7. Exit")
+        print("7. Import medications from CSV")
+        print("8. Exit")
+
 
         option = input("Choose an option (1 - 7): ")
         if option == '1':
@@ -36,6 +39,9 @@ def main():
         elif option == '6':
             display_inventory()
         elif option == '7':
+            file_path = input("Enter the path to the CSV file: ")
+            import_medications_from_csv(file_path)
+        elif option == '8':
             print("Exiting expiry tracker. See you next time!")
             break
         else:

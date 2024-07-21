@@ -1,4 +1,5 @@
 import sqlite3
+import csv
 from datetime import datetime, timedelta
 
 # Get user inputs for adding a new medication
@@ -184,3 +185,30 @@ def delete_medication():
 
     connection.close()
 
+# Imports medications from a CSV file
+def import_medications_from_csv(file_path):
+    connection = sqlite3.connect('pharmacy_inventory.db')
+    cursor = connection.cursor()
+
+    with open(file_path, 'r') as file:
+        csv_reader = csv.DictReader(file)
+        for row in csv_reader:
+            name = row['name']
+            ndc = row['ndc']
+            med_type = row['med_type']
+            expiry_date = row['expiry_date']
+
+            # Check if the expiry date is valid
+            if not get_valid_date(expiry_date):
+                print(f"Invalid date format for {name}. Skipping entry.")
+                continue
+
+            # Insert data into the database
+            cursor.execute("""
+                INSERT INTO medications (name, ndc, med_type, expiry_date)
+                VALUES (?, ?, ?, ?)
+            """, (name, ndc, med_type, expiry_date))
+
+    connection.commit()
+    connection.close()
+    print("Medications imported successfully!")
