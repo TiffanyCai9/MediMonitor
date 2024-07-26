@@ -190,25 +190,39 @@ def import_medications_from_csv(file_path):
     connection = sqlite3.connect('pharmacy_inventory.db')
     cursor = connection.cursor()
 
-    with open(file_path, 'r') as file:
-        csv_reader = csv.DictReader(file)
-        for row in csv_reader:
-            name = row['name']
-            ndc = row['ndc']
-            med_type = row['med_type']
-            expiry_date = row['expiry_date']
+    try:
+        with open(file_path, 'r') as file:
+            csv_reader = csv.DictReader(file)
+            for row in csv_reader:
+                name = row.get('name')
+                ndc = row.get('ndc')
+                med_type = row.get('med_type')
+                expiry_date = row.get('expiry_date')
 
-            # Check if the expiry date is valid
-            if not get_valid_date(expiry_date):
-                print(f"Invalid date format for {name}. Skipping entry.")
-                continue
+                # Validate CSV content
+                if not name or not ndc or not med_type or not expiry_date:
+                    print(f"Missing data in row: {row}. Skipping entry.")
+                    continue
+                
+                if not get_valid_date(expiry_date):
+                    print(f"Invalid date format for {name}. Skipping entry.")
+                    continue
 
-            # Insert data into the database
-            cursor.execute("""
-                INSERT INTO medications (name, ndc, med_type, expiry_date)
-                VALUES (?, ?, ?, ?)
-            """, (name, ndc, med_type, expiry_date))
+                # Check for existing medication
+                cursor.execute("SELECT COUNT(*) FROM medications WHERE ndc = ?", (ndc,))
+                if cursor.fetchone()[0] > 0:
+                    print(f"Medication with NDC {ndc} already exists. Skipping entry.")
+                    continue
 
-    connection.commit()
-    connection.close()
-    print("Medications imported successfully!")
+                # Insert data into the database
+                cursor.execute("""
+                    INSERT INTO medications (name, ndc, med_type, expiry_date)
+                    VALUES (?, ?, ?, ?)
+                """, (name, ndc, med_type, expiry_date))
+
+        connection.commit()
+        print("Medications imported successfully!")
+    except Exception as e:
+        print(f"Error importing medications: {e}")
+    finally:
+        connection.close()
