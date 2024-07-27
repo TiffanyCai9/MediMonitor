@@ -49,9 +49,9 @@ A Python-based pharmacy inventory management tool designed to track medication e
 
 ## Setup Instructions
 - Install Dependencies: Ensure you have all required packages installed. 
-'''
+```
 pip install sqlite3 csv google-api-python-client google-auth-httplib2 google-auth-oauthlib
-'''
+```
 - Gmail API Setup:
     - Create a Project: Go to the Google Cloud Console, create a new project, and enable the Gmail API.
     - Create Credentials: Download the client_secret.json file from the Google Cloud Console and place it in your project directory.
