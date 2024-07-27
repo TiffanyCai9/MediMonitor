@@ -1,6 +1,7 @@
 import sqlite3
 import csv
 from datetime import datetime, timedelta
+from sendEmail import send_email
 
 # Get user inputs for adding a new medication
 def get_medication():
@@ -66,25 +67,28 @@ def check_expirations():
             notifications['90_days'].append((name, ndc, med_type, expiry_date))
             move_to_sales(name, ndc, med_type, expiry_date)
     
-    print(f"\nProducts expiring within 30 days: ")
-    format_notif(notifications['30_days'])
-    print("""\nThese products have been moved to the expiry bin. 
-Please follow the pharmacy’s protocol for  returning or disposing of expired medications.""")
-    print("\nProducts expiring within 60 days: ")
-    format_notif(notifications['60_days'])
-    print(f"\nProducts expiring within 90 days: ")
-    format_notif(notifications['90_days'])
-    print(f"\nOTC products expiring within 90 days: ")
-    format_notif(notifications['sale'])
-    print("""\nThese products have been moved to the sales bin.
-Please mark these products as discounted.""")
+    email_body = "Products expiring soon:\n\n"
+    for period, items in notifications.items():
+        if items:
+            email_body += f"\nProducts expiring within {period.replace('_', ' ')}:\n"
+            for item in items:
+                name, ndc, med_type, expiry_date = item
+                email_body += (f"Name: {name}\n"
+                               f"NDC: {ndc}\n"
+                               f"Type: {med_type}\n"
+                               f"Expiry Date: {expiry_date}\n"
+                               f"Days Left: {(datetime.strptime(expiry_date, '%Y-%m-%d').date() - today).days} days\n\n")
+
+    email_body += """Notes:\n\nPrescription products expiring within 30 days have been moved to the expiry bin. 
+                    Please follow the pharmacy’s protocol for returning or disposing of expired medications.\n\n 
+                    The listed sales products have been moved to the sales bin.
+                    Please mark these products as discounted."""
+    if not any(notifications.values()):
+        email_body += "No medications are nearing expiration."
+    send_email('MediMonitor Expiration Notifications', email_body)
+    
     connection.commit()
     connection.close()
-
-# Helper function to formats products in notifications list
-def format_notif(notification_list):
-    for notification in notification_list:
-        print(notification)
 
 # Moves expired items into expired medication table
 def move_to_expiry_bin(name, ndc, med_type, expiry_date):
